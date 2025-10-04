@@ -15,6 +15,14 @@ import AdminProjects from './routes/admin/AdminProjects'
 import AdminProperties from './routes/admin/AdminProperties'
 import AdminAmenities from './routes/admin/AdminAmenities'
 import AdminPosts from './routes/admin/AdminPosts'
+import AdminCategories from './routes/admin/AdminCategories'
+import AdminProfiles from './routes/admin/AdminProfiles'
+import AdminContacts from './routes/admin/AdminContacts'
+import AdminReviews from './routes/admin/AdminReviews'
+import AdminFavorites from './routes/admin/AdminFavorites'
+import AdminSavedSearches from './routes/admin/AdminSavedSearches'
+import AdminOrders from './routes/admin/AdminOrders'
+import AdminPackages from './routes/admin/AdminPackages'
 
 const router = createBrowserRouter([
   {
@@ -37,8 +45,16 @@ const router = createBrowserRouter([
           { index: true, element: <AdminProjects /> },
           { path: 'projects', element: <AdminProjects /> },
           { path: 'properties', element: <AdminProperties /> },
+          { path: 'categories', element: <AdminCategories /> },
           { path: 'amenities', element: <AdminAmenities /> },
-          { path: 'posts', element: <AdminPosts /> }
+          { path: 'posts', element: <AdminPosts /> },
+          { path: 'profiles', element: <AdminProfiles /> },
+          { path: 'contacts', element: <AdminContacts /> },
+          { path: 'reviews', element: <AdminReviews /> },
+          { path: 'favorites', element: <AdminFavorites /> },
+          { path: 'saved-searches', element: <AdminSavedSearches /> },
+          { path: 'orders', element: <AdminOrders /> },
+          { path: 'packages', element: <AdminPackages /> }
         ]
       }
     ]

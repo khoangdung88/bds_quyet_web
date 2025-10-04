@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 
 interface PropertyItem {
@@ -98,6 +99,9 @@ export default function PropertiesList() {
             <div className="small" style={{ marginTop: 6 }}>{p.address}{p.ward ? `, ${p.ward}` : ''}, {p.district}, {p.city}</div>
             {p.status && <div className="small" style={{ marginTop: 6 }}>Trạng thái: {p.status}</div>}
             {p.featured ? <div className="small" style={{ marginTop: 6, color: '#45a29e' }}>Nổi bật</div> : null}
+            <div style={{ marginTop: 10 }}>
+              <Link className="button" to={`/properties/${p.id}`}>Xem chi tiết</Link>
+            </div>
           </div>
         ))}
       </div>

@@ -24,7 +24,7 @@ export default function App() {
           )}
         </nav>
       </header>
-      <main className="container" key={pathname}>
+      <main className="container">
         <Outlet />
       </main>
       <footer className="container small" style={{ padding: '24px 0' }}>
