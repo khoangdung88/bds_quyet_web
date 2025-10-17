@@ -23,6 +23,7 @@ import AdminFavorites from './routes/admin/AdminFavorites'
 import AdminSavedSearches from './routes/admin/AdminSavedSearches'
 import AdminOrders from './routes/admin/AdminOrders'
 import AdminPackages from './routes/admin/AdminPackages'
+import AdminPostDownloads from './routes/admin/AdminPostDownloads'
 
 const router = createBrowserRouter([
   {
@@ -54,7 +55,8 @@ const router = createBrowserRouter([
           { path: 'favorites', element: <AdminFavorites /> },
           { path: 'saved-searches', element: <AdminSavedSearches /> },
           { path: 'orders', element: <AdminOrders /> },
-          { path: 'packages', element: <AdminPackages /> }
+          { path: 'packages', element: <AdminPackages /> },
+          { path: 'post-downloads', element: <AdminPostDownloads /> }
         ]
       }
     ]

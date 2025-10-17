@@ -58,6 +58,7 @@ export default function AdminLayout() {
               <Link className={`button ${isActive('/admin/reviews') ? '' : 'secondary'}`} to="/admin/reviews">Đánh giá</Link>
               <Link className={`button ${isActive('/admin/favorites') ? '' : 'secondary'}`} to="/admin/favorites">Yêu thích</Link>
               <Link className={`button ${isActive('/admin/saved-searches') ? '' : 'secondary'}`} to="/admin/saved-searches">Tìm kiếm đã lưu</Link>
+              <Link className={`button ${isActive('/admin/post-downloads') ? '' : 'secondary'}`} to="/admin/post-downloads">Tải xuống bài viết</Link>
             </div>
           )}
 

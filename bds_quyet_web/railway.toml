@@ -1,0 +1,22 @@
+[build]
+  builder = "nixpacks"
+  buildCommand = "npm install && npm run build"
+  startCommand = "npm run start"
+
+[deploy]
+  startCommand = "npm run start"
+  healthcheckPath = "/"
+  healthcheckTimeout = 300
+
+[build.environment]
+  NODE_ENV = "production"
+  NODE_OPTIONS = "--max-old-space-size=1024"
+  PORT = "3000"
+
+[build.args]
+  NPM_CONFIG_PRODUCTION = "false"
+
+# Cấu hình cho ứng dụng
+[env]
+  PORT = "3000"
+  NODE_ENV = "production"

@@ -3,21 +3,22 @@ import { supabase } from '../../lib/supabaseClient'
 
 type Profile = {
   id: string
-  email: string
-  full_name: string | null
-  phone: string | null
-  user_type: 'admin' | 'seller' | 'buyer' | 'agent' | null
-  city: string | null
-  district: string | null
-  ward: string | null
-  address: string | null
-  avatar_url: string | null
-  bio: string | null
-  company: string | null
-  tax_code: string | null
-  verified: boolean | null
-  created_at: string
-  updated_at: string
+  email?: string | null
+  full_name?: string | null
+  phone?: string | null
+  user_type?: 'admin' | 'seller' | 'buyer' | 'agent' | null
+  city?: string | null
+  district?: string | null
+  ward?: string | null
+  address?: string | null
+  avatar_url?: string | null
+  bio?: string | null
+  company?: string | null
+  tax_code?: string | null
+  verified?: boolean | null
+  created_at?: string
+  updated_at?: string
+  // Các trường khác nếu có trong database
 }
 
 const USER_TYPES = [
@@ -34,22 +35,30 @@ export default function AdminProfiles() {
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  // Define a type for the form data that matches our form fields
-  type ProfileFormData = Omit<Profile, 'id' | 'created_at' | 'updated_at' | 'avatar_url'>;
+  // Define a type for the form data that matches our database columns
+  type ProfileFormData = Partial<{
+    email: string;
+    full_name: string;
+    phone: string;
+    user_type: 'buyer' | 'seller' | 'admin' | 'agent';
+    city: string;
+    district: string;
+    ward: string;
+    address: string;
+    bio: string;
+    company: string;
+    tax_code: string;
+    verified: boolean;
+  }>;
+  
+  // Initial form data with default values
+  const initialFormData: ProfileFormData = {
+    user_type: 'buyer',
+    verified: false
+  };
   
   const [formData, setFormData] = useState<ProfileFormData>(() => ({
-    full_name: '',
-    phone: '',
-    user_type: 'buyer',
-    city: '',
-    district: '',
-    ward: '',
-    address: '',
-    bio: '',
-    company: '',
-    tax_code: '',
-    verified: false,
-    email: ''
+    ...initialFormData
   }))
 
   const load = async () => {
@@ -76,20 +85,46 @@ export default function AdminProfiles() {
 
   const handleEdit = (profile: Profile) => {
     setEditingProfile(profile);
-    setFormData({
-      full_name: profile.full_name || '',
-      phone: profile.phone || '',
-      user_type: profile.user_type || 'buyer',
-      city: profile.city || '',
-      district: profile.district || '',
-      ward: profile.ward || '',
-      address: profile.address || '',
-      bio: profile.bio || '',
-      company: profile.company || '',
-      tax_code: profile.tax_code || '',
-      verified: profile.verified || false,
-      email: profile.email || ''
-    });
+    
+    // Create a new form data object with type-safe fields
+    const updatedFormData: ProfileFormData = {
+      user_type: (profile.user_type as 'buyer' | 'seller' | 'admin' | 'agent') || 'buyer',
+      verified: profile.verified || false
+    };
+    
+    // Add optional fields if they exist
+    if (profile.email !== undefined && profile.email !== null) {
+      updatedFormData.email = profile.email;
+    }
+    if (profile.full_name !== undefined && profile.full_name !== null) {
+      updatedFormData.full_name = profile.full_name;
+    }
+    if (profile.phone !== undefined && profile.phone !== null) {
+      updatedFormData.phone = profile.phone;
+    }
+    if (profile.city !== undefined && profile.city !== null) {
+      updatedFormData.city = profile.city;
+    }
+    if (profile.district !== undefined && profile.district !== null) {
+      updatedFormData.district = profile.district;
+    }
+    if (profile.ward !== undefined && profile.ward !== null) {
+      updatedFormData.ward = profile.ward;
+    }
+    if (profile.address !== undefined && profile.address !== null) {
+      updatedFormData.address = profile.address;
+    }
+    if (profile.bio !== undefined && profile.bio !== null) {
+      updatedFormData.bio = profile.bio;
+    }
+    if (profile.company !== undefined && profile.company !== null) {
+      updatedFormData.company = profile.company;
+    }
+    if (profile.tax_code !== undefined && profile.tax_code !== null) {
+      updatedFormData.tax_code = profile.tax_code;
+    }
+    
+    setFormData(updatedFormData);
     setIsEditing(true);
   }
 
@@ -149,10 +184,7 @@ export default function AdminProfiles() {
           .eq('id', editingProfile.id);
         if (error) throw error;
       } else {
-        // When creating, ensure email is included
-        if (!formData.email) {
-          throw new Error('Email là bắt buộc khi tạo mới hồ sơ');
-        }
+        // Email is now optional, no need to check
         const { error } = await supabase
           .from('profiles')
           .insert([{
@@ -163,27 +195,10 @@ export default function AdminProfiles() {
         if (error) throw error;
       }
       
-      // Reset form with all required fields including email
+      // Reset form with all required fields
       setIsEditing(false);
       setEditingProfile(null);
-      
-      // Create a new form data object with all required fields
-      const resetFormData: ProfileFormData = {
-        full_name: '',
-        phone: '',
-        user_type: 'buyer',
-        city: '',
-        district: '',
-        ward: '',
-        address: '',
-        bio: '',
-        company: '',
-        tax_code: '',
-        verified: false,
-        email: ''
-      };
-      
-      setFormData(resetFormData);
+      setFormData({ ...initialFormData });
       
       // Reload the data
       await load();
@@ -211,21 +226,9 @@ export default function AdminProfiles() {
         <button 
           className="button" 
           onClick={() => {
-            setEditingProfile(null)
-            setFormData({
-              full_name: '',
-              phone: '',
-              user_type: 'buyer',
-              city: '',
-              district: '',
-              ward: '',
-              address: '',
-              bio: '',
-              company: '',
-              tax_code: '',
-              verified: false
-            })
-            setIsEditing(true)
+            setEditingProfile(null);
+            setFormData({ ...initialFormData });
+            setIsEditing(true);
           }}
         >
           + Thêm mới
