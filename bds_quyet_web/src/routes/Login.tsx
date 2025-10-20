@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 export default function Login() {
   const { user, loading: authLoading, signInWithEmail, signUpWithEmail } = useAuth()
@@ -9,20 +9,22 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const nav = useNavigate()
+  const loc = useLocation() as any
+  const fromPath = loc?.state?.from?.pathname || '/admin'
 
   // Nếu đã đăng nhập, tự động chuyển hướng khỏi trang Login
   useEffect(() => {
     if (!authLoading && user) {
-      nav('/admin', { replace: true })
+      nav(fromPath, { replace: true })
     }
-  }, [user, authLoading, nav])
+  }, [user, authLoading, nav, fromPath])
 
   const doSignIn = async () => {
     setSubmitting(true)
     const { error } = await signInWithEmail(email, password)
     setSubmitting(false)
     if (error) { setError(error.message); return }
-    nav('/admin')
+    nav(fromPath, { replace: true })
   }
 
   const doSignUp = async () => {
@@ -31,7 +33,7 @@ export default function Login() {
     setSubmitting(false)
     if (error) { setError(error.message); return }
     // Sau khi signup cần xác thực email tùy cài đặt; chuyển hướng tạm thời
-    nav('/admin')
+    nav(fromPath, { replace: true })
   }
 
   return (

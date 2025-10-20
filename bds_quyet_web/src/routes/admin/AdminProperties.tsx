@@ -4,6 +4,9 @@ import UploadImage from '../../components/UploadImage'
 import AutoCompleteInput from '../../components/AutoCompleteInput'
 import { fetchVNLocations, type VNProvince } from '../../lib/vnLocations'
 
+// Webhook n8n để đăng Facebook (đặt trong .env: VITE_N8N_WEBHOOK_FB_POST)
+const n8nWebhookUrl = import.meta.env.VITE_N8N_WEBHOOK_FB_POST as string | undefined
+
 type Seller = {
   id: string
   full_name: string | null
@@ -91,6 +94,15 @@ export default function AdminProperties() {
   const [sellers, setSellers] = useState<Seller[]>([])
   const [selectedSellerIds, setSelectedSellerIds] = useState<string[]>([])
   const [loadingSellers, setLoadingSellers] = useState(false)
+
+  type FbGroup = { id: string; name: string; group_id: string | null; is_active: boolean; kind: 'source' | 'target' }
+  const [fbGroups, setFbGroups] = useState<FbGroup[]>([])
+  const [postModalOpen, setPostModalOpen] = useState(false)
+  const [postingPropertyId, setPostingPropertyId] = useState<string | null>(null)
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
+  const [postMessage, setPostMessage] = useState<string>('')
+  const [selectAllGroups, setSelectAllGroups] = useState<boolean>(true)
+  const [posting, setPosting] = useState(false)
 
   // Tải danh sách sellers (người bán)
   const loadSellers = async () => {
@@ -181,6 +193,68 @@ export default function AdminProperties() {
 
   useEffect(() => { load() }, [])
   useEffect(() => { localStorage.setItem('admin_properties_view', viewMode) }, [viewMode])
+
+  const loadTargetGroups = async () => {
+    const { data } = await supabase
+      .from('fb_groups')
+      .select('id,name,group_id,is_active,kind')
+      .eq('kind', 'target')
+      .eq('is_active', true)
+      .order('name')
+    const list = (data as any[] | null) || []
+    setFbGroups(list as FbGroup[])
+    const ids = list.map(g => g.group_id).filter(Boolean) as string[]
+    setSelectedGroupIds(ids)
+    setSelectAllGroups(true)
+  }
+
+  const openPostModal = async (p: Property) => {
+    setPostingPropertyId(p.id)
+    const msg = [
+      p.title,
+      `${new Intl.NumberFormat('vi-VN').format(p.price)} ${p.currency ?? 'VND'}`,
+      `${p.area} m²`,
+      [p.address, p.district, p.city].filter(Boolean).join(', ')
+    ].filter(Boolean).join('\n')
+    setPostMessage(msg)
+    await loadTargetGroups()
+    setPostModalOpen(true)
+  }
+
+  const toggleSelectAllGroups = (checked: boolean) => {
+    setSelectAllGroups(checked)
+    setSelectedGroupIds(checked ? (fbGroups.map(g => g.group_id).filter(Boolean) as string[]) : [])
+  }
+
+  const submitPostToFacebook = async () => {
+    if (!postingPropertyId) return
+    // Không bắt buộc chọn group ở frontend nữa; n8n sẽ tự lấy danh sách group từ Supabase
+    if (!n8nWebhookUrl) {
+      alert('Thiếu cấu hình webhook n8n: VITE_N8N_WEBHOOK_FB_POST')
+      return
+    }
+    try {
+      setPosting(true)
+      const resp = await fetch(n8nWebhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // Gửi tối thiểu id BĐS; kèm message và groupIds (nếu muốn n8n ưu tiên dùng)
+        body: JSON.stringify({ property_id: postingPropertyId, message: postMessage, groupIds: selectedGroupIds })
+      })
+      if (!resp.ok) {
+        const text = await resp.text()
+        throw new Error(text || 'Webhook n8n trả về lỗi')
+      }
+      alert('Đã gửi yêu cầu đến n8n. Vui lòng kiểm tra lịch sử đăng sau ít phút.')
+      // Không ghi log ở frontend nữa; n8n sẽ tự lưu vào bảng fb_published_posts
+      setPostModalOpen(false)
+      setPostingPropertyId(null)
+    } catch (e: any) {
+      alert(e?.message || 'Đăng thất bại')
+    } finally {
+      setPosting(false)
+    }
+  }
 
   // Tải danh sách tỉnh/thành - quận/huyện - phường/xã
   useEffect(() => {
@@ -738,6 +812,7 @@ export default function AdminProperties() {
               <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
                 <button className="button" onClick={() => startEdit(p)}>Sửa</button>
                 <button className="button secondary" onClick={() => remove(p.id)}>Xóa</button>
+                <button className="button" onClick={() => openPostModal(p)}>Đăng Facebook</button>
               </div>
             </div>
           ))}
@@ -767,12 +842,52 @@ export default function AdminProperties() {
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button className="button" onClick={() => startEdit(p)}>Sửa</button>
                       <button className="button secondary" onClick={() => remove(p.id)}>Xóa</button>
+                      <button className="button" onClick={() => openPostModal(p)}>Đăng Facebook</button>
                     </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {postModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+          <div className="card" style={{ width: 560, maxHeight: '80vh', overflow: 'auto' }}>
+            <div className="h2">Đăng lên Facebook</div>
+            <div className="small" style={{ marginBottom: 8 }}>Chọn group để đăng</div>
+            <label className="small" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <input type="checkbox" checked={selectAllGroups} onChange={e => toggleSelectAllGroups(e.target.checked)} /> Chọn tất cả
+            </label>
+            <div style={{ border: '1px solid var(--border, #e5e7eb)', borderRadius: 4, padding: 8, maxHeight: 200, overflow: 'auto', marginBottom: 8 }}>
+              {fbGroups.length === 0 ? (
+                <div className="small" style={{ color: '#666' }}>Chưa có group 'target' nào (đang bật)</div>
+              ) : (
+                fbGroups.map(g => (
+                  <label key={g.id} className="small" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedGroupIds.includes(g.group_id || '')}
+                      onChange={e => {
+                        const id = g.group_id || ''
+                        if (!id) return
+                        setSelectedGroupIds(prev => e.target.checked ? Array.from(new Set([...prev, id])) : prev.filter(x => x !== id))
+                        if (!e.target.checked) setSelectAllGroups(false)
+                      }}
+                    />
+                    <span>{g.name} {g.group_id ? `(${g.group_id})` : ''}</span>
+                  </label>
+                ))
+              )}
+            </div>
+            <div className="small" style={{ marginBottom: 6 }}>Nội dung bài đăng</div>
+            <textarea className="input" rows={6} value={postMessage} onChange={e => setPostMessage(e.target.value)} />
+            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <button className="button" onClick={submitPostToFacebook} disabled={posting}>{posting ? 'Đang đăng...' : 'Đăng'}</button>
+              <button className="button secondary" onClick={() => setPostModalOpen(false)}>Hủy</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

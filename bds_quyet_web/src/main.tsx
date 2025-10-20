@@ -24,6 +24,8 @@ import AdminSavedSearches from './routes/admin/AdminSavedSearches'
 import AdminOrders from './routes/admin/AdminOrders'
 import AdminPackages from './routes/admin/AdminPackages'
 import AdminPostDownloads from './routes/admin/AdminPostDownloads'
+import AdminFbGroups from './routes/admin/AdminFbGroups'
+import AdminFbPublished from './routes/admin/AdminFbPublished'
 
 const router = createBrowserRouter([
   {
@@ -56,7 +58,9 @@ const router = createBrowserRouter([
           { path: 'saved-searches', element: <AdminSavedSearches /> },
           { path: 'orders', element: <AdminOrders /> },
           { path: 'packages', element: <AdminPackages /> },
-          { path: 'post-downloads', element: <AdminPostDownloads /> }
+          { path: 'post-downloads', element: <AdminPostDownloads /> },
+          { path: 'fb-groups', element: <AdminFbGroups /> },
+          { path: 'fb-published', element: <AdminFbPublished /> }
         ]
       }
     ]
